@@ -162,6 +162,7 @@
 	.site-logo {
 		padding-left: 15px;
 		z-index: 9999;
+		filter: brightness(0%);
 	}
 
 	.site-logo img {
