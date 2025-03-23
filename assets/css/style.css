@@ -208,7 +208,9 @@ html, body {
 .nav > li > a:focus {
     background-color: transparent;
 }
-
+img {
+    border: 2px solid red;
+  }
 /* HERO
 ================================================== */
 .hero { 
