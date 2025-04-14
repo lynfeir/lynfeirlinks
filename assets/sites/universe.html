@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Universe Canvas with Constellations and Cosmic Writing</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Arial', sans-serif;
+    }
+    
+    #universe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    
+    .star {
+      position: absolute;
+      background-color: #fff;
+      border-radius: 50%;
+      animation: twinkle 3s infinite alternate;
+    }
+    
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      box-shadow: inset -10px -10px 20px rgba(0, 0, 0, 0.5);
+      transition: transform 0.5s ease-out;
+      cursor: pointer;
+    }
+    
+    .sun {
+      position: absolute;
+      border-radius: 50%; /* Make it a square */
+      cursor: pointer;
+      transform-origin: center;
+      animation: rotate 30s linear infinite;
+    }
+    
+    .planet.playing, .constellation-star.playing {
+      animation: pulse 2s infinite alternate;
+    }
+    
+    .sun.playing {
+      animation: rotate 30s linear infinite, sunPulse 2s infinite alternate;
+    }
+    
+    .constellation-line {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.3);
+      transform-origin: 0 50%;
+      pointer-events: none;
+    }
+    
+    .constellation-star {
+      position: absolute;
+      background-color: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+    }
+    
+    .constellation-name {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    #cosmic-writer {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      text-align: center;
+    }
+    
+    #cosmic-text {
+      width: 280px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 20px;
+      outline: none;
+      text-align: center;
+    }
+    
+    .cosmic-letter {
+      position: absolute;
+      color: white;
+      font-size: 16px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    
+    @keyframes twinkle {
+      0% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.3); }
+      100% { box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.7); }
+    }
+    
+    @keyframes sunPulse {
+      0% { box-shadow: 0 0 50px 20px rgba(243, 156, 18, 0.5); }
+      100% { box-shadow: 0 0 70px 30px rgba(243, 156, 18, 0.9); }
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes flyAway {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--fly-x), var(--fly-y)) scale(0); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="universe"></div>
+  
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const universe = document.getElementById('universe');
+      const cosmicText = document.getElementById('cosmic-text');
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      
+      // Initialize audio context and sounds
+      let audioInitialized = false;
+      const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+      synth.set({
+        oscillator: {
+          type: "sine"
+        },
+        envelope: {
+          attack: 0.5,
+          decay: 0.3,
+          sustain: 0.7,
+          release: 3
+        },
+        volume: -10
+      });
+      
+      // White keys on piano (C4 to B4)
+      const notes = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'];
+      const activeSounds = {};
+      
+      // Create stars
+      for (let i = 0; i < 200; i++) {
+        createStar();
+      }
+      
+      // Create planets
+      const centerX = windowWidth / 2;
+      const centerY = windowHeight / 2;
+      
+      // Create a square sun at the center (C4)
+      const sun = document.createElement('div');
+      sun.className = 'sun';
+      sun.style.width = '70px';
+      sun.style.height = '70px';
+      sun.style.left = `${centerX - 35}px`;
+      sun.style.top = `${centerY - 35}px`;
+      sun.style.backgroundColor = '#f39c12';
+      sun.style.boxShadow = '0 0 50px 20px rgba(243, 156, 18, 0.7)';
+      sun.dataset.note = notes[0];
+      sun.dataset.playing = "false";
+      
+      // Add sound on click for sun
+      sun.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSound(sun);
+      });
+      
+      universe.appendChild(sun);
+      
+      // Create planets with different notes
+      createCelestialBody('planet', '#3498db', 40, centerX, centerY - 120, notes[1]); // Blue planet (D4)
+      createCelestialBody('planet', '#e74c3c', 25, centerX + 180, centerY, notes[2]); // Red planet (E4)
+      createCelestialBody('planet', '#f1c40f', 35, centerX - 220, centerY + 80, notes[3]); // Yellow planet (F4)
+      createCelestialBody('planet', '#2ecc71', 20, centerX + 100, centerY + 150, notes[4]); // Green planet (G4)
+      createCelestialBody('planet', '#9b59b6', 30, centerX - 160, centerY - 180, notes[5]); // Purple planet (A4)
+      createCelestialBody('planet', '#e67e22', 45, centerX - 50, centerY + 220, notes[6]); // Orange planet (B4)
+      
+      // Create major constellations
+      createConstellation('Ursa Major', [
+        { x: windowWidth * 0.2, y: windowHeight * 0.2 },
+        { x: windowWidth * 0.23, y: windowHeight * 0.15 },
+        { x: windowWidth * 0.27, y: windowHeight * 0.12 },
+        { x: windowWidth * 0.32, y: windowHeight * 0.14 },
+        { x: windowWidth * 0.35, y: windowHeight * 0.2 },
+        { x: windowWidth * 0.30, y: windowHeight * 0.22 },
+        { x: windowWidth * 0.25, y: windowHeight * 0.25 }
+      ], 'C5');
+      
+      createConstellation('Orion', [
+        { x: windowWidth * 0.85, y: windowHeight * 0.15 }, // Top left (Betelgeuse)
+        { x: windowWidth * 0.87, y: windowHeight * 0.2 },
+        { x: windowWidth * 0.9, y: windowHeight * 0.25 }, // Belt left
+        { x: windowWidth * 0.93, y: windowHeight * 0.25 }, // Belt middle
+        { x: windowWidth * 0.96, y: windowHeight * 0.25 }, // Belt right
+        { x: windowWidth * 0.93, y: windowHeight * 0.35 }, // Sword
+        { x: windowWidth * 0.8, y: windowHeight * 0.3 }  // Bottom right (Rigel)
+      ], 'D5');
+      
+      createConstellation('Cassiopeia', [
+        { x: windowWidth * 0.15, y: windowHeight * 0.8 },
+        { x: windowWidth * 0.2, y: windowHeight * 0.83 },
+        { x: windowWidth * 0.25, y: windowHeight * 0.78 },
+        { x: windowWidth * 0.3, y: windowHeight * 0.83 },
+        { x: windowWidth * 0.35, y: windowHeight * 0.8 }
+      ], 'E5');
+      
+      // Cosmic writer functionality
+      cosmicText.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter' && cosmicText.value.trim() !== '') {
+          launchCosmicText(cosmicText.value);
+          cosmicText.value = '';
+        }
+      });
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        const newWidth = window.innerWidth;
+        const newHeight = window.innerHeight;
+        const newCenterX = newWidth / 2;
+        const newCenterY = newHeight / 2;
+        
+        // Update sun position
+        const sun = document.querySelector('.sun');
+        sun.style.left = `${newCenterX - 35}px`;
+        sun.style.top = `${newCenterY - 35}px`;
+        
+        // Update stars
+        universe.querySelectorAll('.star').forEach(star => star.remove());
+        for (let i = 0; i < 200; i++) {
+          createStar();
+        }
+        
+        // Update planets
+        const planets = document.querySelectorAll('.planet');
+        const planetData = [
+          { color: '#3498db', size: 40, x: newCenterX, y: newCenterY - 120, note: notes[1] },
+          { color: '#e74c3c', size: 25, x: newCenterX + 180, y: newCenterY, note: notes[2] },
+          { color: '#f1c40f', size: 35, x: newCenterX - 220, y: newCenterY + 80, note: notes[3] },
+          { color: '#2ecc71', size: 20, x: newCenterX + 100, y: newCenterY + 150, note: notes[4] },
+          { color: '#9b59b6', size: 30, x: newCenterX - 160, y: newCenterY - 180, note: notes[5] },
+          { color: '#e67e22', size: 45, x: newCenterX - 50, y: newCenterY + 220, note: notes[6] }
+        ];
+        
+        planets.forEach((planet, index) => {
+          const data = planetData[index];
+          planet.style.left = `${data.x - data.size/2}px`;
+          planet.style.top = `${data.y - data.size/2}px`;
+        });
+        
+        // Remove constellations
+        universe.querySelectorAll('.constellation-star, .constellation-line, .constellation-name').forEach(el => el.remove());
+        
+        // Recreate constellations
+        createConstellation('Ursa Major', [
+          { x: newWidth * 0.2, y: newHeight * 0.2 },
+          { x: newWidth * 0.23, y: newHeight * 0.15 },
+          { x: newWidth * 0.27, y: newHeight * 0.12 },
+          { x: newWidth * 0.32, y: newHeight * 0.14 },
+          { x: newWidth * 0.35, y: newHeight * 0.2 },
+          { x: newWidth * 0.30, y: newHeight * 0.22 },
+          { x: newWidth * 0.25, y: newHeight * 0.25 }
+        ], 'C5');
+        
+        createConstellation('Orion', [
+          { x: newWidth * 0.85, y: newHeight * 0.15 },
+          { x: newWidth * 0.87, y: newHeight * 0.2 },
+          { x: newWidth * 0.9, y: newHeight * 0.25 },
+          { x: newWidth * 0.93, y: newHeight * 0.25 },
+          { x: newWidth * 0.96, y: newHeight * 0.25 },
+          { x: newWidth * 0.93, y: newHeight * 0.35 },
+          { x: newWidth * 0.8, y: newHeight * 0.3 }
+        ], 'D5');
+        
+        createConstellation('Cassiopeia', [
+          { x: newWidth * 0.15, y: newHeight * 0.8 },
+          { x: newWidth * 0.2, y: newHeight * 0.83 },
+          { x: newWidth * 0.25, y: newHeight * 0.78 },
+          { x: newWidth * 0.3, y: newHeight * 0.83 },
+          { x: newWidth * 0.35, y: newHeight * 0.8 }
+        ], 'E5');
+      });
+      
+      // Initialize audio on first click
+      document.body.addEventListener('click', () => {
+        if (!audioInitialized) {
+          Tone.start();
+          audioInitialized = true;
+        }
+      }, { once: true });
+      
+      // Handle mouse movement for interactive effect
+      universe.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        
+        // Make stars slightly move based on mouse position
+        const stars = document.querySelectorAll('.star');
+        stars.forEach(star => {
+          const speed = parseFloat(star.dataset.speed || 0.5);
+          const starX = parseFloat(star.dataset.baseX || star.style.left);
+          const starY = parseFloat(star.dataset.baseY || star.style.top);
+          
+          const offsetX = (mouseX - centerX) * (speed / 100);
+          const offsetY = (mouseY - centerY) * (speed / 100);
+          
+          star.style.left = `${starX + offsetX}px`;
+          star.style.top = `${starY + offsetY}px`;
+          
+          if (!star.dataset.baseX) {
+            star.dataset.baseX = starX;
+            star.dataset.baseY = starY;
+            star.dataset.speed = speed;
+          }
+        });
+        
+        // Make planets slightly react to cursor
+        const planets = document.querySelectorAll('.planet');
+        planets.forEach(planet => {
+          const planetX = parseFloat(planet.style.left) + parseFloat(planet.style.width) / 2;
+          const planetY = parseFloat(planet.style.top) + parseFloat(planet.style.height) / 2;
+          const distX = mouseX - planetX;
+          const distY = mouseY - planetY;
+          const distance = Math.sqrt(distX * distX + distY * distY);
+          
+          if (distance < 200) {
+            const angle = Math.atan2(distY, distX);
+            const push = 15 * (1 - distance / 200);
+            const pushX = Math.cos(angle) * push;
+            const pushY = Math.sin(angle) * push;
+            
+            planet.style.transform = `translate(${pushX}px, ${pushY}px)`;
+          } else {
+            planet.style.transform = 'translate(0, 0)';
+          }
+        });
+      });
+      
+      // Add occasional shooting stars
+      setInterval(() => {
+        if (Math.random() > 0.9) {
+          createShootingStar();
+        }
+      }, 2000);
+      
+      // Functions to create elements
+      function createStar() {
+        const star = document.createElement('div');
+        star.className = 'star';
+        
+        const size = Math.random() * 2 + 1;
+        const x = Math.random() * windowWidth;
+        const y = Math.random() * windowHeight;
+        const delay = Math.random() * 5;
+        const speed = Math.random() * 2 + 0.5;
+        
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${x}px`;
+        star.style.top = `${y}px`;
+        star.style.animationDelay = `${delay}s`;
+        
+        star.dataset.speed = speed;
+        
+        universe.appendChild(star);
+      }
+      
+      function createCelestialBody(className, color, size, x, y, note) {
+        const body = document.createElement('div');
+        body.className = className;
+        
+        body.style.width = `${size}px`;
+        body.style.height = `${size}px`;
+        body.style.left = `${x - size/2}px`;
+        body.style.top = `${y - size/2}px`;
+        body.style.backgroundColor = color;
+        
+        body.dataset.note = note;
+        body.dataset.playing = "false";
+        
+        // Add sound on click
+        body.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleSound(body);
+        });
+        
+        universe.appendChild(body);
+        return body;
+      }
+      
+      function createShootingStar() {
+        const shootingStar = document.createElement('div');
+        shootingStar.className = 'star shooting';
+        
+        const startX = Math.random() * windowWidth;
+        const startY = 0;
+        
+        shootingStar.style.width = '3px';
+        shootingStar.style.height = '3px';
+        shootingStar.style.left = `${startX}px`;
+        shootingStar.style.top = `${startY}px`;
+        shootingStar.style.opacity = '1';
+        shootingStar.style.boxShadow = '0 0 15px 3px rgba(255, 255, 255, 0.8)';
+        
+        universe.appendChild(shootingStar);
+        
+        const angle = Math.PI / 4 + (Math.random() * Math.PI / 4);
+        const speed = 15 + Math.random() * 10;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        
+        let x = startX;
+        let y = startY;
+        
+        function animate() {
+          x += vx;
+          y += vy;
+          
+          shootingStar.style.left = `${x}px`;
+          shootingStar.style.top = `${y}px`;
+          
+          if (y < windowHeight && x < windowWidth && x > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            shootingStar.remove();
+          }
+        }
+        
+        animate();
+      }
+      
+      // Sound functions
+      function toggleSound(body) {
+        if (!audioInitialized) {
+          Tone.start();
+          audioInitialized = true;
+        }
+        
+        const note = body.dataset.note;
+        const id = body.className + '-' + note;
+        
+        if (body.dataset.playing === "false") {
+          // Start playing
+          body.dataset.playing = "true";
+          body.classList.add('playing');
+          
+          // Play the note
+          synth.triggerAttack(note);
+          activeSounds[id] = { note: note, body: body };
+          
+        } else {
+          // Stop playing
+          body.dataset.playing = "false";
+          body.classList.remove('playing');
+          
+          // Fade out the sound
+          synth.triggerRelease(note);
+          delete activeSounds[id];
+        }
+      }
+      
+      // Constellation functions
+      function createConstellation(name, points, note) {
+        const stars = [];
+        
+        // Create constellation stars
+        points.forEach((point, index) => {
+          const star = document.createElement('div');
+          star.className = 'constellation-star';
+          star.style.width = '4px';
+          star.style.height = '4px';
+          star.style.left = `${point.x}px`;
+          star.style.top = `${point.y}px`;
+          star.dataset.note = note;
+          star.dataset.playing = "false";
+          star.dataset.constellation = name;
+          star.dataset.index = index;
+          
+          // Brighter first star
+          if (index === 0) {
+            star.style.width = '6px';
+            star.style.height = '6px';
+            star.style.boxShadow = '0 0 10px 3px rgba(255, 255, 255, 0.7)';
+          }
+          
+          // Add sound on click
+          star.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSound(star);
+          });
+          
+          universe.appendChild(star);
+          stars.push(star);
+        });
+        
+        // Create constellation lines
+        for (let i = 0; i < points.length - 1; i++) {
+          const p1 = points[i];
+          const p2 = points[i + 1];
+          
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx);
+          
+          const line = document.createElement('div');
+          line.className = 'constellation-line';
+          line.style.width = `${distance}px`;
+          line.style.height = '1px';
+          line.style.left = `${p1.x}px`;
+          line.style.top = `${p1.y}px`;
+          line.style.transform = `rotate(${angle}rad)`;
+          
+          universe.appendChild(line);
+        }
+        
+        // Add constellation name
+        const center = findCenter(points);
+        const nameElement = document.createElement('div');
+        nameElement.className = 'constellation-name';
+        nameElement.textContent = name;
+        nameElement.style.left = `${center.x}px`;
+        nameElement.style.top = `${center.y + 15}px`;
+        
+        universe.appendChild(nameElement);
+        
+        return stars;
+      }
+      
+      function findCenter(points) {
+        let sumX = 0;
+        let sumY = 0;
+        
+        points.forEach(point => {
+          sumX += point.x;
+          sumY += point.y;
+        });
+        
+        return {
+          x: sumX / points.length,
+          y: sumY / points.length
+        };
+      }
+      
+      // Cosmic writing function
+      function launchCosmicText(text) {
+        const chars = text.split('');
+        const centerX = windowWidth / 2;
+        const centerY = windowHeight / 2;
+        
+        chars.forEach((char, index) => {
+          setTimeout(() => {
+            const letterElement = document.createElement('div');
+            letterElement.className = 'cosmic-letter';
+            letterElement.textContent = char;
+            letterElement.style.left = `${centerX}px`;
+            letterElement.style.top = `${centerY}px`;
+            
+            // Random destination
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 500 + 200;
+            const destinationX = Math.cos(angle) * distance;
+            const destinationY = Math.sin(angle) * distance;
+            
+            letterElement.style.setProperty('--fly-x', `${destinationX}px`);
+            letterElement.style.setProperty('--fly-y', `${destinationY}px`);
+            
+            universe.appendChild(letterElement);
+            
+            // Fade in
+            setTimeout(() => {
+              letterElement.style.opacity = '1';
+              
+              // Fly away
+              setTimeout(() => {
+                letterElement.style.animation = 'flyAway 3s forwards';
+                
+                // Remove after animation
+                setTimeout(() => {
+                  letterElement.remove();
+                }, 3000);
+              }, 500);
+            }, 50);
+            
+            // Create constellation-like effect
+            if (index > 0 && index < chars.length) {
+              const prevLetter = document.querySelectorAll('.cosmic-letter')[document.querySelectorAll('.cosmic-letter').length - 1];
+              if (prevLetter) {
+                const line = document.createElement('div');
+                line.className = 'constellation-line';
+                line.style.width = '20px';
+                line.style.height = '1px';
+                line.style.left = `${centerX}px`;
+                line.style.top = `${centerY}px`;
+                line.style.opacity = '0.4';
+                line.style.animation = 'flyAway 3.5s forwards';
+                
+                universe.appendChild(line);
+                
+                setTimeout(() => {
+                  line.remove();
+                }, 3500);
+              }
+            }
+            
+            // Play a soft note
+            if (audioInitialized) {
+              const noteIndex = index % notes.length;
+              const octave = 4 + Math.floor(index / notes.length) % 2;
+              const note = notes[noteIndex].replace('4', octave);
+              
+              const noteSynth = new Tone.Synth({
+                oscillator: { type: "sine" },
+                envelope: {
+                  attack: 0.02,
+                  decay: 0.1,
+                  sustain: 0.3,
+                  release: 1
+                },
+                volume: -20
+              }).toDestination();
+              
+              noteSynth.triggerAttackRelease(note, "8n");
+            }
+          }, index * 100);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
