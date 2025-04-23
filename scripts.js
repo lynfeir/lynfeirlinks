@@ -231,17 +231,3 @@ document.addEventListener('DOMContentLoaded', function() {
       bar.style.setProperty('--width', width);
     });
   });
-  document.getElementById('contactForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formMessage = document.getElementById('formMessage');
-
-    emailjs.sendForm('your_service_id', 'your_template_id', this)
-        .then(() => {
-            formMessage.innerHTML = "✅ Your message has been sent!";
-            formMessage.style.color = "green";
-            this.reset();
-        }, (error) => {
-            formMessage.innerHTML = "❌ Failed to send message. Please try again.";
-            formMessage.style.color = "red";
-        });
-});
