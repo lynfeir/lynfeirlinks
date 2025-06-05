@@ -12,7 +12,7 @@
     --color-border: #1e2c57;
     --shadow-glow: 0 0 15px rgba(110, 79, 246, 0.5);
     --shadow-neon: 0 0 8px rgba(7, 205, 255, 0.8);
-    --gradient-primary: linear-gradient(135deg, #6e4ff6, #07cdff);
+    --gradient-primary: linear-gradient(135deg, #bc4ff6, #07cdff);
     --gradient-dark: linear-gradient(135deg, #050a18, #0a1228);
     --transition: all 0.3s ease-in-out;
   }
@@ -23,7 +23,12 @@
     padding: 0;
     box-sizing: border-box;
   }
-  
+  @font-face {
+  font-family: 'Orbit';
+  src: url('assets/orbit.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
   html {
     scroll-behavior: smooth;
   }
@@ -266,6 +271,7 @@
   .glowing-text {
     text-shadow: var(--shadow-glow);
     animation: glow 3s infinite alternate;
+    font-family: 'Orbit', sans-serif;
   }
   
   @keyframes glow {
