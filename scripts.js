@@ -1,5 +1,8 @@
 // scripts.js
-
+function dismissWarning() {
+  document.body.classList.add('mobile-warning-dismissed');
+  document.querySelector('.mobile-warning').style.display = 'none';
+}
 document.addEventListener('DOMContentLoaded', function() {
     // Navigation scroll effect
     const nav = document.querySelector('nav');

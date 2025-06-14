@@ -326,7 +326,132 @@
     color: var(--color-bg);
     transform: translateY(-3px);
   }
+  /* Mobile Not Optimized Warning - Dark Mode */
+.mobile-warning {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #ffffff;
+  z-index: 9999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.mobile-warning-content {
+  text-align: center;
+  max-width: 300px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 30px 25px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-warning-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  color: #ff6b6b;
+  display: block;
+}
+
+.mobile-warning h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.mobile-warning p {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  color: #b0b0b0;
+}
+
+.mobile-warning-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.mobile-warning-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-warning-button:active {
+  transform: translateY(0);
+}
+
+/* Show warning only on mobile devices */
+@media screen and (max-width: 768px) {
+  .mobile-warning {
+    display: flex;
+  }
   
+  /* Hide main content on mobile */
+  body:not(.mobile-warning-dismissed) > *:not(.mobile-warning) {
+    display: none !important;
+  }
+}
+
+/* Tablet specific adjustments */
+@media screen and (max-width: 768px) and (min-width: 481px) {
+  .mobile-warning-content {
+    max-width: 400px;
+    padding: 40px 35px;
+  }
+  
+  .mobile-warning h2 {
+    font-size: 28px;
+  }
+  
+  .mobile-warning p {
+    font-size: 18px;
+  }
+}
+
+/* Small mobile phones */
+@media screen and (max-width: 480px) {
+  .mobile-warning-content {
+    max-width: 280px;
+    padding: 25px 20px;
+  }
+  
+  .mobile-warning-icon {
+    font-size: 40px;
+  }
+  
+  .mobile-warning h2 {
+    font-size: 22px;
+  }
+  
+  .mobile-warning p {
+    font-size: 15px;
+  }
+  
+  .mobile-warning-button {
+    padding: 10px 20px;
+    font-size: 15px;
+  }
+}
   /* Section Titles */
   .section-title {
     position: relative;
