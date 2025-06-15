@@ -5,6 +5,10 @@ let scrollTimeout;
 const isMobile = window.innerWidth <= 768;
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+function dismissWarning() {
+  document.body.classList.add('mobile-warning-dismissed');
+  document.querySelector('.mobile-warning').style.display = 'none';
+}
 // THROTTLE UTILITY
 function throttle(func, limit) {
     let inThrottle;
