@@ -8,7 +8,7 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 function dismissWarning() {
   document.body.classList.add('mobile-warning-dismissed');
   document.querySelector('.mobile-warning').style.display = 'none';
-}
+}a
 // THROTTLE UTILITY
 function throttle(func, limit) {
     let inThrottle;
